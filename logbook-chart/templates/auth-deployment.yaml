@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: auth-service
+  namespace: logbook
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: auth-service
+
+  template:
+    metadata:
+      labels:
+        app: auth-service
+
+    spec:
+      containers:
+      - name: auth-service
+
+        image: vaishnavisaw01/auth-service:v2
+
+        ports:
+        - containerPort: 3001
+
+        env:
+        - name: PORT
+          value: "3001"
+
+        - name: MONGO_URI
+          value: "mongodb://logbookUser:Logbook%4012345@ac-dl48gtx-shard-00-00.62kbdmb.mongodb.net:27017,ac-dl48gtx-shard-00-01.62kbdmb.mongodb.net:27017,ac-dl48gtx-shard-00-02.62kbdmb.mongodb.net:27017/logbookDB?ssl=true&replicaSet=atlas-11gwgf-shard-0&authSource=admin&retryWrites=true&w=majority"
+
+        - name: JWT_SECRET
+          value: "supersecretkey123"
+
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

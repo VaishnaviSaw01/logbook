@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap');
+
+.sidebar {
+  height: 100vh;
+  background: linear-gradient(180deg, #0f172a, #0b1220);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 25px 18px;
+}
+
+/* LOGO SECTION */
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 12px; 
+  padding: 20px 10px;             /* 👈 Controls distance between LB and LogBook */
+  padding-left: 50px;
+}
+
+.logo-text {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: "Poppins", "Segoe UI", sans-serif;  /* 👈 Professional font */
+  letter-spacing: 0.5px;
+  margin: 0;   /* 🔥 IMPORTANT — removes extra spacing */
+}
+
+/* Optional: Make 'Book' colored */
+.logo-text span {
+  color: #6366f1;
+}
+
+/* Menu */
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.menu-item:hover {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+
+
+/* Logout */
+.logout-btn {
+  background: #ef4444;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: white;
+  transition: 0.3s;
+}
+
+.menu-item.active {
+  background: linear-gradient(90deg, #4f46e5, #6366f1);
+}

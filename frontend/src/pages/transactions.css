@@ -1,0 +1,301 @@
+.transactions-page {
+  display: flex;
+  height: 100%;
+  background: #f5f7fb;
+}
+
+/* LEFT PANEL */
+.transactions-left {
+  width: 45%;
+  background: white;
+  border-right: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.transactions-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.transactions-header h2 {
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.filter-section {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+
+  background: #ffffff;           /* ✅ white */
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.filter-section input {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.filter-section button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: #e9ebf0;
+  color: white;
+  font-weight: 500;
+}
+
+.download-btn {
+  background: #16a34a;
+  color: white;
+}
+
+/* Transaction List */
+.transactions-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+}
+
+/* Card */
+.transaction-card {
+  background: #ffffff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.transaction-card:hover {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transform: translateY(-2px);
+}
+
+/* Top Row */
+.txn-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.txn-date {
+  font-size: 12px;
+  color: #888;
+}
+
+/* Amount */
+.txn-amount-credit {
+  color: #16a34a;
+  font-weight: bold;
+}
+
+.txn-amount-debit {
+  color: #dc2626;
+  font-weight: bold;
+}
+
+/* Bottom Row */
+.txn-bottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #555;
+}
+
+/* RIGHT PANEL */
+.transactions-right {
+  flex: 1;
+  background: #fafafa;
+  padding: 25px;
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #999;
+  font-size: 18px;
+}
+.transactions-page {
+  display: flex;
+  height: 100%;
+  background: #f4f6fa;
+}
+
+.transactions-left {
+  width: 40%;
+  padding: 20px;
+  overflow-y: auto;
+  border-right: 1px solid #e0e0e0;
+}
+
+.transactions-right {
+  width: 60%;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.txn-card {
+  background: white;
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.txn-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.txn-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #666;
+}
+
+.money-in {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.money-out {
+  color: #c62828;
+  font-weight: 600;
+}
+
+.txn-middle {
+  margin: 8px 0;
+}
+
+.txn-bottom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #444;
+}
+
+.statement-card {
+  background: white;
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.statement-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+.amount-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.party-type {
+  font-size: 11px;
+  color: #777;
+  margin-top: 2px;
+}
+/* FILTER BAR */
+.txn-filter-bar {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 16px;
+  background: #f4f6fc;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.date-group {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.date-group input {
+  margin-top: 4px;
+  padding: 6px 8px;
+  background: #ffffff;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: rgb(0, 0, 0);
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  background: #2563eb;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.filter-btn:hover {
+  background: #1d4ed8;
+}
+.txn-scroll {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 20px;
+  padding-right: 5px;
+}
+
+/* DOWNLOAD BUTTON */
+.floating-download-btn {
+  width: 100%;
+  margin-top: 25px;
+  padding: 15px;
+  border-radius: 30px;
+  background: #16a34a;
+  color: white;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.floating-download-btn:hover {
+  background: #15803d;
+}
+.amount-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.txn-delete-btn {
+  background: #ffecec;
+  border: none;
+  padding: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.txn-delete-btn:hover {
+  background: #ffdddd;
+}
