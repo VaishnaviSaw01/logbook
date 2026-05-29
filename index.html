@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LogBook | Azure Cloud Ledger Management</title>
+  <meta name="description" content="LogBook is a secure cloud-based business ledger management system deployed on Microsoft Azure with GitHub CI/CD." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="backdrop"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">L</div>
+      <div>
+        <div class="brand-name">LogBook</div>
+        <div class="brand-subtitle">Azure Cloud Ledger System</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="#about">About</a>
+      <a href="#features">Features</a>
+      <a href="#azure">Azure</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#workflow">Workflow</a>
+    </nav>
+
+    <a class="cta" href="#contact">Project Details</a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">MERN • GitHub CI/CD • Microsoft Azure</span>
+        <h1>Secure Cloud-Based Business Ledger Management System</h1>
+        <p>
+          LogBook is a modern business ledger platform for managing customers, suppliers,
+          invoices, purchases, payments, and transaction history. It is deployed on Microsoft
+          Azure to improve scalability, security, governance, monitoring, and operational efficiency.
+        </p>
+
+        <div class="hero-actions">
+          <a class="button primary" href="#architecture">View Architecture</a>
+          <a class="button secondary" href="#azure">Azure Services</a>
+        </div>
+
+        <div class="hero-stats">
+          <div class="stat">
+            <strong>10+</strong>
+            <span>Azure Services</span>
+          </div>
+          <div class="stat">
+            <strong>CI/CD</strong>
+            <span>GitHub Actions</span>
+          </div>
+          <div class="stat">
+            <strong>PaaS</strong>
+            <span>Azure App Service</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-card">
+        <div class="card-title">Deployment Flow</div>
+        <div class="flow">
+          <div class="flow-node">Developer</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">GitHub</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node highlight">GitHub Actions</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">Azure App Service</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">MongoDB Atlas</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="panel">
+      <div class="section-heading">
+        <span>Project Overview</span>
+        <h2>Why LogBook Exists</h2>
+      </div>
+      <p class="lead">
+        Many small businesses still rely on manual bookkeeping and fragmented recordkeeping.
+        LogBook solves this by providing a cloud-hosted ledger system that centralizes business
+        transactions and improves accessibility, reliability, and data protection.
+      </p>
+
+      <div class="grid grid-3">
+        <article class="info-card">
+          <h3>Business Focus</h3>
+          <p>Designed for customer records, supplier management, invoices, purchases, and payment tracking.</p>
+        </article>
+        <article class="info-card">
+          <h3>Cloud Ready</h3>
+          <p>Built for Azure hosting with managed services and a clean deployment pipeline.</p>
+        </article>
+        <article class="info-card">
+          <h3>Faculty Friendly</h3>
+          <p>Simple, professional, and suitable for viva or project presentation.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="features" class="panel alt">
+      <div class="section-heading">
+        <span>Application Capabilities</span>
+        <h2>Core Features</h2>
+      </div>
+
+      <div class="grid grid-3 feature-grid">
+        <article class="feature-card"><h3>Customer Management</h3><p>Store and search customer profiles with transaction history.</p></article>
+        <article class="feature-card"><h3>Supplier Tracking</h3><p>Track supplier details, purchases, and business relations.</p></article>
+        <article class="feature-card"><h3>Invoice Records</h3><p>Maintain invoices and billing data in an organized ledger.</p></article>
+        <article class="feature-card"><h3>Payment Monitoring</h3><p>Record incoming and outgoing payments accurately.</p></article>
+        <article class="feature-card"><h3>Search & Filter</h3><p>Quickly locate entries across the ledger system.</p></article>
+        <article class="feature-card"><h3>Authentication</h3><p>Secure login flow for protected business access.</p></article>
+      </div>
+    </section>
+
+    <section id="azure" class="panel">
+      <div class="section-heading">
+        <span>Cloud Foundation</span>
+        <h2>Azure Services Used</h2>
+      </div>
+
+      <div class="grid grid-3">
+        <article class="service-card">
+          <div class="service-icon">☁</div>
+          <h3>Azure App Service</h3>
+          <p>Hosts the Node.js backend as a managed PaaS environment.</p>
+        </article>
+        <article class="service-card">
+          <div class="service-icon">🗄</div>
+          <h3>Azure Blob Storage</h3>
+          <p>Stores invoices, bills, reports, and business documents.</p>
+        </article>
+        <article class="service-card">
+          <div class="service-icon">🔐</div>
+          <h3>Microsoft Entra ID</h3>
+          <p>Handles identity management and authentication support.</p>
+        </article>
+        <article class="service-card">
+          <div class="service-icon">🛡</div>
+          <h3>Azure RBAC</h3>
+          <p>Implements least-privilege role-based access control.</p>
+        </article>
+        <article class="service-card">
+          <div class="service-icon">📡</div>
+          <h3>Azure Monitor</h3>
+          <p>Tracks logs, diagnostics, and operational health.</p>
+        </article>
+        <article class="service-card">
+          <div class="service-icon">📜</div>
+          <h3>Azure Policy</h3>
+          <p>Enforces governance standards and compliance rules.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture" class="panel alt">
+      <div class="section-heading">
+        <span>Target Deployment</span>
+        <h2>Final Azure Architecture</h2>
+      </div>
+
+      <div class="architecture">
+        <div class="arch-column">
+          <div class="arch-box">Developer</div>
+          <div class="arch-line"></div>
+          <div class="arch-box">GitHub Repository</div>
+          <div class="arch-line"></div>
+          <div class="arch-box accent">GitHub Actions CI/CD</div>
+          <div class="arch-line"></div>
+          <div class="arch-box">Azure App Service</div>
+          <div class="arch-line"></div>
+          <div class="arch-box">MongoDB Atlas</div>
+        </div>
+
+        <div class="arch-side">
+          <div class="side-card">
+            <h3>Security</h3>
+            <p>Entra ID, RBAC, VNet, and NSG improve access control and traffic filtering.</p>
+          </div>
+          <div class="side-card">
+            <h3>Storage</h3>
+            <p>Blob Storage keeps business files separate from application logic.</p>
+          </div>
+          <div class="side-card">
+            <h3>Governance</h3>
+            <p>Azure Policy and Monitor provide compliance and visibility.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="workflow" class="panel">
+      <div class="section-heading">
+        <span>Deployment Process</span>
+        <h2>GitHub-Based CI/CD</h2>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div>
+            <h3>1. Push Code to GitHub</h3>
+            <p>The source code is stored in a GitHub repository.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div>
+            <h3>2. Connect Deployment Center</h3>
+            <p>Azure App Service is linked with the repository.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div>
+            <h3>3. Generate GitHub Actions</h3>
+            <p>Azure creates the workflow for automatic builds and deployment.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div>
+            <h3>4. Deploy Live</h3>
+            <p>Every push triggers deployment to the Azure hosted application.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel alt">
+      <div class="section-heading">
+        <span>Project Outcome</span>
+        <h2>What This Solution Delivers</h2>
+      </div>
+
+      <div class="grid grid-2">
+        <article class="outcome-card">
+          <h3>Technical Benefits</h3>
+          <ul>
+            <li>Managed hosting with Azure App Service</li>
+            <li>Scalable cloud storage with Blob Storage</li>
+            <li>Automated deployment using GitHub Actions</li>
+            <li>Centralized monitoring and governance</li>
+          </ul>
+        </article>
+        <article class="outcome-card">
+          <h3>Learning Outcomes</h3>
+          <ul>
+            <li>Cloud deployment and application hosting</li>
+            <li>Identity, access control, and networking</li>
+            <li>Governance, monitoring, and compliance</li>
+            <li>Cloud architecture for real-world systems</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="contact" class="panel contact">
+      <div>
+        <span>Course Project</span>
+        <h2>LogBook on Microsoft Azure</h2>
+        <p>
+          Cloud Infrastructure and Resource Management • INT327
+        </p>
+      </div>
+      <a class="button primary" href="#top" id="backToTop">Back to Top</a>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>LogBook • Secure Cloud-Based Business Ledger Management System</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
