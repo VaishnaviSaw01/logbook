@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: frontend-service
+  namespace: logbook
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: frontend-service
+
+  template:
+    metadata:
+      labels:
+        app: frontend-service
+
+    spec:
+      containers:
+      - name: frontend-service
+
+        image: vaishnavisaw01/frontend-service:v2
+
+        ports:
+        - containerPort: 80
+
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 15
+
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 3
+          periodSeconds: 10
+
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "50m"
+
+          limits:
+            memory: "128Mi"
+            cpu: "200m"

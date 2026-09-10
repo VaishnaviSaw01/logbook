@@ -8,15 +8,11 @@ function LogSettings() {
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [selectedSupplier, setSelectedSupplier] = useState("");
 
-  useEffect(() => {
-    fetchParties();
-  }, []);
-
-  const fetchParties = async () => {
+  async function fetchParties() {
     const token = localStorage.getItem("token");
 
     const { data } = await axios.get(
-      "http://localhost:5000/api/parties",
+      "/api/parties",
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -24,12 +20,18 @@ function LogSettings() {
     setSuppliers(data.filter(p => p.type === "SUPPLIER"));
   };
 
+  useEffect(() => {
+    fetchParties();
+  }, []);
+
   const handleSoftDelete = async (id) => {
     const token = localStorage.getItem("token");
 
-    await axios.put(
-      `http://localhost:5000/api/parties/soft-delete/${id}`,
-      {},
+    // The backend's soft-delete is exposed as DELETE /api/parties/:id
+    // (partyController.deleteParty sets isDeleted=true rather than
+    // removing the document) — there is no separate /soft-delete route.
+    await axios.delete(
+      `/api/parties/${id}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
 

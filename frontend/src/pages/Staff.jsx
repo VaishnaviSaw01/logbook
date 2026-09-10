@@ -21,7 +21,7 @@ function Staff() {
 const fetchStaff = async () => {
   try {
     const { data } = await axios.get(
-      "http://localhost:5000/api/staff",
+      "/api/staff",
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`
@@ -32,7 +32,7 @@ const fetchStaff = async () => {
     setStaffList(data);
 
   } catch (error) {
-    console.log("Failed to fetch staff");
+    console.error("Failed to fetch staff:", error.response?.data?.message || error.message);
   }
 };
 useEffect(() => {
@@ -41,7 +41,7 @@ useEffect(() => {
   const handleAddStaff = async () => {
   try {
     const { data } = await axios.post(
-      "http://localhost:5000/api/staff",
+      "/api/staff",
       {
         name: formData.name,
         email: formData.email,
@@ -81,7 +81,7 @@ useEffect(() => {
 const handleDeleteStaff = async (id) => {
   try {
     await axios.delete(
-      `http://localhost:5000/api/staff/${id}`,
+      `/api/staff/${id}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`
@@ -93,12 +93,12 @@ const handleDeleteStaff = async (id) => {
     setSelectedStaff(null);
 
   } catch (error) {
-    alert("Failed to delete staff");
+    alert(error.response?.data?.message || "Failed to delete staff");
   }
 };
 const handleDeleteActivity = async (id) => {
   await axios.delete(
-    `http://localhost:5000/api/staff/activity/${id}`,
+    `/api/staff/activity/${id}`,
     {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`

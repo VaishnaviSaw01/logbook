@@ -18,7 +18,7 @@ useEffect(() => {
     const token = localStorage.getItem("token");
 
     const { data } = await axios.get(
-      `http://localhost:5000/api/transactions/${selectedParty._id}`,
+      `/api/transactions/${selectedParty._id}`,
       {
         headers: { Authorization: `Bearer ${token}` }
       }
@@ -49,7 +49,7 @@ useEffect(() => {
       const token = localStorage.getItem("token");
 
       const { data } = await axios.get(
-        `http://localhost:5000/api/transactions?from=${from}&to=${to}`,
+        `/api/transactions?from=${from}&to=${to}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -100,7 +100,7 @@ const handleDeleteTransaction = async (id) => {
     const token = localStorage.getItem("token");
 
     await axios.delete(
-      `http://localhost:5000/api/transactions/${id}`,
+      `/api/transactions/${id}`,
       {
         headers: { Authorization: `Bearer ${token}` }
       }

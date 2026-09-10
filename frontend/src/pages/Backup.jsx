@@ -7,7 +7,7 @@ function Backup() {
     const token = localStorage.getItem("token");
 
     const response = await axios.get(
-      "http://localhost:5000/api/backup",
+      "/api/backup",
       {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob"

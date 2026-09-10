@@ -1,6 +1,10 @@
 node_modules
 .env
+.env.*
+!.env.example
 dist
 build
 coverage
 .vscode
+# real secret values — copy k8s/secret.example.yaml to this path and fill it in
+k8s/secret.yaml

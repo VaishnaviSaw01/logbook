@@ -25,22 +25,19 @@ const [summary, setSummary] = useState({
   totalPending: 0,
   totalPayable: 0
 });
-useEffect(() => {
-  fetchDashboardData();
-}, []);
-const fetchDashboardData = async () => {
+async function fetchDashboardData() {
   try {
     const token = localStorage.getItem("token");
 
     // Get all parties
     const { data: parties } = await axios.get(
-      "http://localhost:5000/api/parties",
+      "/api/parties",
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
     // Get all transactions
     const { data: transactions } = await axios.get(
-      "http://localhost:5000/api/transactions",
+      "/api/transactions",
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -82,6 +79,10 @@ const totalPayable = parties
     console.error(error);
   }
 };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   return (
     <div className="dashboard-container">

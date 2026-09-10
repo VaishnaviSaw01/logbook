@@ -14,14 +14,11 @@ const [inventoryItems, setInventoryItems] = useState([]);
 const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 const [showPaymentModal, setShowPaymentModal] = useState(false);
 const [purchaseItems, setPurchaseItems] = useState([
-  { name: "", quantity: "", price: "" }
+  { itemId: "", quantity: "", price: "" }
 ]);
-useEffect(() => {
-  fetchInventory();
-}, []);
-const fetchInventory = async () => {
+async function fetchInventory() {
   const { data } = await axios.get(
-    "http://localhost:5000/api/inventory",
+    "/api/inventory",
     {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`
@@ -30,6 +27,9 @@ const fetchInventory = async () => {
   );
   setInventoryItems(data);
 };
+useEffect(() => {
+  fetchInventory();
+}, []);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -88,45 +88,6 @@ const [editData, setEditData] = useState({
   paymentMethod: "",
   note: ""
 });
-const [purchaseForm, setPurchaseForm] = useState({
-  item: { itemId: "", quantity: "", price: "" }
-});
-const handleAddPurchase = async () => {
-    console.log("Purchase clicked", purchaseForm);
-
-  try {
-    const token = localStorage.getItem("token");
-
-    const total =
-      Number(purchaseForm.item.quantity) *
-      Number(purchaseForm.item.price);
-
-    await axios.post(
-  "http://localhost:5000/api/transactions",
-  {
-    partyId: selectedSupplier._id,
-    amount: total,
-    type: "CREDIT",
-    itemId: purchaseForm.item.itemId,
-    quantity: Number(purchaseForm.item.quantity)
-  },
-  {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`
-    }
-  }
-);
-
-    setShowPurchaseModal(false);
-    setPurchaseForm({ item: { itemId: "", quantity: "", price: "" } });
-
-    refreshSupplierData(selectedSupplier._id);
-
-
-  } catch (err) {
-    console.error(err);
-  }
-};
 const [paymentForm, setPaymentForm] = useState({
   amount: "",
   paymentMethod: "CASH",
@@ -137,7 +98,7 @@ const handleAddPayment = async () => {
     const token = localStorage.getItem("token");
 
     await axios.post(
-      "http://localhost:5000/api/transactions",
+      "/api/transactions",
       {
         partyId: selectedSupplier._id,
         amount: Number(paymentForm.amount),
@@ -171,7 +132,7 @@ const refreshSupplierData = async (supplierId) => {
 
     // Refresh suppliers
     const { data: partyData } = await axios.get(
-      "http://localhost:5000/api/parties",
+      "/api/parties",
       {
         headers: { Authorization: `Bearer ${token}` }
       }
@@ -194,7 +155,7 @@ const refreshSupplierData = async (supplierId) => {
 
     // Refresh transactions
     const { data: txnData } = await axios.get(
-      `http://localhost:5000/api/transactions/${supplierId}`,
+      `/api/transactions/${supplierId}`,
       {
         headers: { Authorization: `Bearer ${token}` }
       }
@@ -213,7 +174,7 @@ const fetchSuppliers = async () => {
     const token = localStorage.getItem("token");
 
     const { data } = await axios.get(
-      "http://localhost:5000/api/parties",
+      "/api/parties",
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -239,7 +200,7 @@ const handleSaveSupplier = async () => {
     const token = localStorage.getItem("token");
 
     await axios.post(
-      "http://localhost:5000/api/parties",
+      "/api/parties",
       {
         name: formData.name,
         phone: formData.phone,
@@ -270,7 +231,7 @@ const handleSaveSupplier = async () => {
       const token = localStorage.getItem("token");
 
       const { data } = await axios.get(
-        `http://localhost:5000/api/transactions/${selectedSupplier._id}`,
+        `/api/transactions/${selectedSupplier._id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -292,7 +253,7 @@ const handleDeleteTransaction = async (txnId) => {
     const token = localStorage.getItem("token");
 
     await axios.delete(
-      `http://localhost:5000/api/transactions/${txnId}`,
+      `/api/transactions/${txnId}`,
       {
         headers: { Authorization: `Bearer ${token}` }
       }
@@ -311,7 +272,7 @@ const handleUpdateTransaction = async () => {
     const token = localStorage.getItem("token");
 
     await axios.put(
-      `http://localhost:5000/api/transactions/${editTxn._id}`,
+      `/api/transactions/${editTxn._id}`,
       editData,
       {
         headers: { Authorization: `Bearer ${token}` }
@@ -346,34 +307,49 @@ const handleSavePurchase = async () => {
   try {
     const token = localStorage.getItem("token");
 
-    const noteString = purchaseItems
-      .map(item =>
-        `${item.name} (${item.quantity} x ${item.price})`
-      )
-      .join(", ");
-
-    await axios.post(
-      "http://localhost:5000/api/transactions",
-      {
-        partyId: selectedSupplier._id,
-        amount: purchaseTotal,
-        type: "CREDIT",
-        paymentMethod: "CASH",
-        note: noteString
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
+    const validItems = purchaseItems.filter(
+      item => item.itemId && Number(item.quantity) > 0 && item.price !== ""
     );
 
+    if (validItems.length === 0) {
+      alert("Select at least one item with a quantity before saving.");
+      return;
+    }
+
+    // The transaction API links a single itemId/quantity to each
+    // transaction, so a multi-item purchase is recorded as one
+    // transaction per line item — each one updates that item's stock.
+    // Sequential (not Promise.all) so two rows for the same item don't
+    // race on the same stock read-modify-write.
+    for (const item of validItems) {
+      const itemName = inventoryItems.find(i => i._id === item.itemId)?.name || "Item";
+
+      await axios.post(
+        "/api/transactions",
+        {
+          partyId: selectedSupplier._id,
+          amount: Number(item.quantity) * Number(item.price),
+          type: "CREDIT",
+          paymentMethod: "CASH",
+          note: `${itemName} (${item.quantity} x ${item.price})`,
+          itemId: item.itemId,
+          quantity: Number(item.quantity)
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+    }
+
     setShowPurchaseModal(false);
-    setPurchaseItems([{ name: "", quantity: "", price: "" }]);
+    setPurchaseItems([{ itemId: "", quantity: "", price: "" }]);
 
     await refreshSupplierData(selectedSupplier._id);
-
+    await fetchInventory();
 
   } catch (error) {
     console.error(error);
+    alert(error.response?.data?.message || "Failed to save purchase");
   }
 };
 
@@ -390,7 +366,7 @@ const handleDeleteSupplier = async () => {
     const token = localStorage.getItem("token");
 
     await axios.delete(
-      `http://localhost:5000/api/parties/${selectedSupplier._id}`,
+      `/api/parties/${selectedSupplier._id}`,
       {
         headers: { Authorization: `Bearer ${token}` }
       }
@@ -402,7 +378,7 @@ const handleDeleteSupplier = async () => {
 
     // Refresh supplier list
     const { data } = await axios.get(
-      "http://localhost:5000/api/parties",
+      "/api/parties",
       {
         headers: { Authorization: `Bearer ${token}` }
       }
@@ -494,9 +470,6 @@ const pendingBalance = totalPurchases - totalPayments;
       placeholder="Search name / phone / address"
       value={search}
       onChange={(e) => setSearch(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") handleSearch();
-      }}
     />
     <span className="search-icon">
       <Search size={18} />

@@ -31,7 +31,30 @@ spec:
           value: "3002"
 
         - name: MONGO_URI
-          value: "mongodb://logbookUser:Logbook%4012345@ac-dl48gtx-shard-00-00.62kbdmb.mongodb.net:27017,ac-dl48gtx-shard-00-01.62kbdmb.mongodb.net:27017,ac-dl48gtx-shard-00-02.62kbdmb.mongodb.net:27017/logbookDB?ssl=true&replicaSet=atlas-11gwgf-shard-0&authSource=admin&retryWrites=true&w=majority"
+          valueFrom:
+            secretKeyRef:
+              name: logbook-secrets
+              key: MONGO_URI
+
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: logbook-secrets
+              key: JWT_SECRET
+
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3002
+          initialDelaySeconds: 10
+          periodSeconds: 15
+
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 3002
+          initialDelaySeconds: 5
+          periodSeconds: 10
 
         resources:
           requests:
