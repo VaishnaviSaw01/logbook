@@ -16,9 +16,6 @@ function App() {
 
   const [token, setToken] = useState(localStorage.getItem("token"));
 
-  const storedUser = localStorage.getItem("user");
-  const user = storedUser ? JSON.parse(storedUser) : null;
-
   useEffect(() => {
     const handleStorageChange = () => {
       setToken(localStorage.getItem("token"));

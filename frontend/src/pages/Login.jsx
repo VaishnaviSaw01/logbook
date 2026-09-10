@@ -14,7 +14,7 @@ function Login({ setToken }) {
 const handleLogin = async () => {
   try {
     const { data } = await axios.post(
-      "http://localhost:5000/api/auth/login",
+      "/api/auth/login",
       formData
     );
 

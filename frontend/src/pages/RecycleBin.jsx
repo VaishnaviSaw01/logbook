@@ -5,26 +5,26 @@ function RecycleBin() {
 
   const [deletedParties, setDeletedParties] = useState([]);
 
-  useEffect(() => {
-    fetchDeleted();
-  }, []);
-
-  const fetchDeleted = async () => {
+  async function fetchDeleted() {
     const token = localStorage.getItem("token");
 
     const { data } = await axios.get(
-      "http://localhost:5000/api/parties/deleted",
+      "/api/parties/deleted",
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
     setDeletedParties(data);
   };
 
+  useEffect(() => {
+    fetchDeleted();
+  }, []);
+
   const handleRestore = async (id) => {
     const token = localStorage.getItem("token");
 
     await axios.put(
-      `http://localhost:5000/api/parties/restore/${id}`,
+      `/api/parties/restore/${id}`,
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -36,7 +36,7 @@ function RecycleBin() {
     const token = localStorage.getItem("token");
 
     await axios.delete(
-      `http://localhost:5000/api/parties/permanent/${id}`,
+      `/api/parties/permanent/${id}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
 

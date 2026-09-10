@@ -18,47 +18,9 @@ const [adjustData, setAdjustData] = useState({
   sellingPrice: ""
 });
 const [allItems, setAllItems] = useState([]);
-function InventoryDetail({ item, onBack }) {
-
-  const profitPerUnit = item.sellingPrice - 30; // temporary demo cost
-
-  return (
-    <div className="inventory-detail">
-
-  <div className="detail-header">
-    <ArrowLeft
-      size={20}
-      className="back-arrow"
-      onClick={onBack}
-    />
-    <h3>{item.name}</h3>
-  </div>
-
-  <div className="detail-row">
-    <span>Available Stock</span>
-    <strong>{item.stock}</strong>
-  </div>
-
-  <div className="detail-row">
-    <span>Selling Price</span>
-    <strong>₹{item.sellingPrice}</strong>
-  </div>
-
-  <div className="detail-row">
-    <span>Total Value</span>
-    <strong>₹{item.stock * item.sellingPrice}</strong>
-  </div>
-
-</div>
-  );
-}
-useEffect(() => {
-  fetchInventory();
-  fetchDashboard();
-}, []);
-const fetchInventory = async () => {
+async function fetchInventory() {
   const { data } = await axios.get(
-    "http://localhost:5000/api/inventory",
+    "/api/inventory",
     {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`
@@ -70,9 +32,9 @@ const fetchInventory = async () => {
   setAllItems(data);
 };
 
-const fetchDashboard = async () => {
+async function fetchDashboard() {
   const { data } = await axios.get(
-    "http://localhost:5000/api/inventory/dashboard",
+    "/api/inventory/dashboard",
     {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`
@@ -81,9 +43,15 @@ const fetchDashboard = async () => {
   );
   setDashboard(data);
 };
+
+useEffect(() => {
+  fetchInventory();
+  fetchDashboard();
+}, []);
+
 const fetchItemDetails = async (id) => {
   const { data } = await axios.get(
-    `http://localhost:5000/api/inventory/${id}`,
+    `/api/inventory/${id}`,
     {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`
@@ -97,7 +65,7 @@ const fetchItemDetails = async (id) => {
 const handleAdjustStock = async () => {
   try {
     await axios.post(
-      "http://localhost:5000/api/inventory/adjust",
+      "/api/inventory/adjust",
       {
         ...adjustData,
         quantity: Number(adjustData.quantity),

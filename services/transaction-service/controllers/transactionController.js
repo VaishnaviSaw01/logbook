@@ -3,12 +3,16 @@ const Party = require("../models/Party");
 const logActivity = require("../utils/logActivity");
 const InventoryItem = require("../models/InventoryItem");
 const InventoryPurchase = require("../models/InventoryPurchase");
+
 const getOwnerId = (user) => {
   return user.role === "ADMIN" ? user._id : user.createdBy;
 };
 
 /* ================================
    CREATE TRANSACTION
+   Also keeps inventory stock in sync:
+     - SUPPLIER + CREDIT  => stock IN  (a purchase from a supplier)
+     - CUSTOMER + DEBIT   => stock OUT (a sale to a customer)
 ================================ */
 exports.createTransaction = async (req, res) => {
   try {
@@ -18,29 +22,60 @@ exports.createTransaction = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({ message: "amount must be a positive number" });
+    }
+
+    const numericQuantity = quantity ? Number(quantity) : 0;
+    if (quantity && (isNaN(numericQuantity) || numericQuantity < 0)) {
+      return res.status(400).json({ message: "quantity must be a non-negative number" });
+    }
+
     const ownerId = getOwnerId(req.user);
 
     const party = await Party.findOne({
       _id: partyId,
-      user: ownerId
+      user: ownerId,
+      isDeleted: false
     });
 
     if (!party) {
       return res.status(404).json({ message: "Party not found" });
     }
 
-    const numericAmount = Number(amount);
+    // Resolve and validate the linked inventory item (if any) BEFORE
+    // writing anything. This is what actually prevents an oversold /
+    // out-of-stock transaction from ever being recorded: previously the
+    // stock check ran *after* the transaction was already created and the
+    // response already sent, so a rejected sale still landed in the
+    // ledger with no way to tell the client it failed.
+    let item = null;
+
+    if (itemId && numericQuantity > 0) {
+      item = await InventoryItem.findOne({ _id: itemId, user: req.user._id });
+
+      if (!item) {
+        return res.status(404).json({ message: "Inventory item not found" });
+      }
+
+      if (party.type === "CUSTOMER" && type === "DEBIT" && item.stock < numericQuantity) {
+        return res.status(400).json({
+          message: `Not enough stock for "${item.name}" (available: ${item.stock}, requested: ${numericQuantity})`
+        });
+      }
+    }
 
     const transaction = await Transaction.create({
-  party: partyId,
-  user: req.user._id,
-  amount: numericAmount,
-  type,
-  note,
-  paymentMethod,
-  item: itemId || null,
-  quantity: quantity || 0
-});
+      party: partyId,
+      user: req.user._id,
+      amount: numericAmount,
+      type,
+      note,
+      paymentMethod,
+      item: itemId || null,
+      quantity: numericQuantity
+    });
 
     if (party.type === "CUSTOMER") {
       if (type === "DEBIT") party.balance += numericAmount;
@@ -53,41 +88,33 @@ exports.createTransaction = async (req, res) => {
     }
 
     await party.save();
-    await logActivity(req.user._id, "Created Transaction");
-    res.status(201).json(transaction);
-    if (itemId && quantity > 0) {
 
-  const item = await InventoryItem.findById(itemId);
+    if (item) {
+      if (party.type === "SUPPLIER" && type === "CREDIT") {
+        item.stock += numericQuantity;
 
-  if (!item) {
-    return res.status(404).json({ message: "Inventory item not found" });
-  }
+        await InventoryPurchase.create({
+          item: item._id,
+          supplier: partyId,
+          quantity: numericQuantity,
+          purchasePrice: numericAmount / numericQuantity,
+          user: req.user._id
+        });
+      }
 
-  if (party.type === "SUPPLIER" && type === "CREDIT") {
+      if (party.type === "CUSTOMER" && type === "DEBIT") {
+        item.stock -= numericQuantity;
+      }
 
-    item.stock += quantity;
-
-    await InventoryPurchase.create({
-      item: itemId,
-      supplier: partyId,
-      quantity,
-      purchasePrice: amount / quantity,
-      user: req.user._id
-    });
-
-  }
-
-  if (party.type === "CUSTOMER" && type === "DEBIT") {
-
-    if (item.stock < quantity) {
-      return res.status(400).json({ message: "Not enough stock" });
+      await item.save();
     }
 
-    item.stock -= quantity;
-  }
+    await logActivity(req.user._id, "Created Transaction");
 
-  await item.save();
-}
+    // Response is sent exactly once, only after every write above has
+    // succeeded, so the client can trust a 201 means stock/balance are
+    // already consistent.
+    res.status(201).json(transaction);
 
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -115,6 +142,8 @@ exports.getTransactionsByParty = async (req, res) => {
 
 /* ================================
    DELETE TRANSACTION
+   Reverses both the party balance and (if the transaction was linked to
+   an inventory item) the stock change it originally made.
 ================================ */
 exports.deleteTransaction = async (req, res) => {
   try {
@@ -151,6 +180,24 @@ exports.deleteTransaction = async (req, res) => {
       if (type === "DEBIT") party.balance += amount;
     }
 
+    if (transaction.item && transaction.quantity > 0) {
+      const item = await InventoryItem.findById(transaction.item);
+
+      if (item) {
+        if (party.type === "SUPPLIER" && type === "CREDIT") {
+          // This transaction had added stock in; deleting it removes that stock again.
+          item.stock = Math.max(0, item.stock - transaction.quantity);
+        }
+
+        if (party.type === "CUSTOMER" && type === "DEBIT") {
+          // This transaction had sold stock out; deleting it returns that stock.
+          item.stock += transaction.quantity;
+        }
+
+        await item.save();
+      }
+    }
+
     await party.save();
     await transaction.deleteOne();
     await logActivity(req.user._id, "Deleted Transaction");
@@ -163,13 +210,22 @@ exports.deleteTransaction = async (req, res) => {
 
 /* ================================
    UPDATE TRANSACTION
+   Only amount/type/note/paymentMethod are editable (matches the
+   frontend's edit form). If amount or type changes, the party balance
+   and any linked inventory stock are reconciled: the transaction's
+   original effect is reversed, then the new effect is applied.
 ================================ */
 exports.updateTransaction = async (req, res) => {
   try {
-    const { partyId, amount, type, note, paymentMethod, itemId, quantity } = req.body;
+    const { amount, type, note, paymentMethod } = req.body;
 
     if (!amount || !type) {
       return res.status(400).json({ message: "Amount and type are required" });
+    }
+
+    const newAmount = Number(amount);
+    if (isNaN(newAmount) || newAmount <= 0) {
+      return res.status(400).json({ message: "amount must be a positive number" });
     }
 
     const ownerId = getOwnerId(req.user);
@@ -195,6 +251,7 @@ exports.updateTransaction = async (req, res) => {
     const oldAmount = Number(transaction.amount);
     const oldType = transaction.type;
 
+    // Reverse the old effect on the party balance
     if (party.type === "CUSTOMER") {
       if (oldType === "DEBIT") party.balance -= oldAmount;
       if (oldType === "CREDIT") party.balance += oldAmount;
@@ -205,8 +262,7 @@ exports.updateTransaction = async (req, res) => {
       if (oldType === "DEBIT") party.balance += oldAmount;
     }
 
-    const newAmount = Number(amount);
-
+    // Apply the new effect on the party balance
     if (party.type === "CUSTOMER") {
       if (type === "DEBIT") party.balance += newAmount;
       if (type === "CREDIT") party.balance -= newAmount;
@@ -215,6 +271,37 @@ exports.updateTransaction = async (req, res) => {
     if (party.type === "SUPPLIER") {
       if (type === "CREDIT") party.balance += newAmount;
       if (type === "DEBIT") party.balance -= newAmount;
+    }
+
+    // Reconcile linked inventory stock if the type changed (quantity/item
+    // themselves are not editable from the UI)
+    if (transaction.item && transaction.quantity > 0 && oldType !== type) {
+      const item = await InventoryItem.findById(transaction.item);
+
+      if (item) {
+        // Undo the old type's stock effect
+        if (party.type === "SUPPLIER" && oldType === "CREDIT") {
+          item.stock = Math.max(0, item.stock - transaction.quantity);
+        }
+        if (party.type === "CUSTOMER" && oldType === "DEBIT") {
+          item.stock += transaction.quantity;
+        }
+
+        // Apply the new type's stock effect
+        if (party.type === "SUPPLIER" && type === "CREDIT") {
+          item.stock += transaction.quantity;
+        }
+        if (party.type === "CUSTOMER" && type === "DEBIT") {
+          if (item.stock < transaction.quantity) {
+            return res.status(400).json({
+              message: `Not enough stock for "${item.name}" to change this transaction to DEBIT (available: ${item.stock}, requested: ${transaction.quantity})`
+            });
+          }
+          item.stock -= transaction.quantity;
+        }
+
+        await item.save();
+      }
     }
 
     transaction.amount = newAmount;
@@ -258,6 +345,7 @@ exports.getMoneyTransactions = async (req, res) => {
       .sort({ createdAt: -1 });
 
     const moneyTransactions = transactions.filter(txn => {
+      if (!txn.party) return false;
       if (txn.party.type === "CUSTOMER" && txn.type === "CREDIT") return true;
       if (txn.party.type === "SUPPLIER" && txn.type === "DEBIT") return true;
       return false;

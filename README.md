@@ -132,8 +132,9 @@ Backend services (`auth`, `customer`, `inventory`, `transaction`) run on dedicat
 FROM node:20-alpine
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --production
+RUN npm ci --omit=dev
 COPY . .
+USER node
 EXPOSE 3000  # Exposed service-specific ports (3001-3004)
 CMD ["node", "server.js"]
 ```
@@ -157,13 +158,46 @@ kind: Ingress
 metadata:
   name: logbook-ingress
   namespace: logbook
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
+  ingressClassName: nginx
   rules:
     - http:
         paths:
+          - path: /api/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 80
+          - path: /api/staff
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 80
+          - path: /api/parties
+            pathType: Prefix
+            backend:
+              service:
+                name: customer-service
+                port:
+                  number: 80
+          - path: /api/inventory
+            pathType: Prefix
+            backend:
+              service:
+                name: inventory-service
+                port:
+                  number: 80
+          - path: /api/transactions
+            pathType: Prefix
+            backend:
+              service:
+                name: transaction-service
+                port:
+                  number: 80
           - path: /
             pathType: Prefix
             backend:
@@ -171,36 +205,8 @@ spec:
                 name: frontend-service
                 port:
                   number: 80
-          - path: /auth
-            pathType: Prefix
-            backend:
-              service:
-                name: auth-service
-                port:
-                  number: 3001
-          - path: /customer
-            pathType: Prefix
-            backend:
-              service:
-                name: customer-service
-                port:
-                  number: 3002
-          - path: /inventory
-            pathType: Prefix
-            backend:
-              service:
-                name: inventory-service
-                port:
-                  number: 3003
-          - path: /transaction
-            pathType: Prefix
-            backend:
-              service:
-                name: transaction-service
-                port:
-                  number: 3004
 ```
-* **Result**: External traffic entering the AWS Elastic Load Balancer (ELB) is dynamically routed internally by path strings to the correct `ClusterIP` services.
+* **Result**: External traffic entering the AWS Elastic Load Balancer (ELB) is dynamically routed internally by path strings to the correct `ClusterIP` services. Note there is deliberately **no** `rewrite-target` annotation: each backend service mounts its routes under this exact same `/api/...` prefix (e.g. `app.use("/api/inventory", inventoryRoutes)` in `inventory-service/server.js`), and the frontend calls these same relative `/api/...` paths — so the path has to pass through unchanged for the two sides to agree on it. The live manifest is [k8s/ingress/ingress.yaml](k8s/ingress/ingress.yaml).
 
 ---
 
@@ -218,7 +224,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/vaishnavisaw01/logbook-pro.git'
+                git branch: 'main', url: 'https://github.com/VaishnaviSaw01/logbook.git'
             }
         }
         stage('Check Docker') {
@@ -240,8 +246,11 @@ pipeline {
         }
         stage('DockerHub Login & Push') {
             steps {
+                // --password-stdin instead of -p: passing a secret as a
+                // CLI argument leaks it into `docker history`/process
+                // listings and Jenkins console output.
                 withCredentials([usernamePassword(credentialsId: "${DOCKER_HUB_CRED}", usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    sh "docker login -u ${USER} -p ${PASS}"
+                    sh 'echo "$PASS" | docker login -u "$USER" --password-stdin'
                 }
                 sh 'docker push vaishnavisaw01/auth-service:latest'
                 sh 'docker push vaishnavisaw01/frontend-service:latest'
@@ -315,11 +324,14 @@ helm install grafana grafana/grafana --namespace monitoring
 ## 🚀 How to Run the Environment
 
 ### 1. Build and Run Locally (Docker Compose)
-To run the microservices environment locally with a single command:
+Copy `.env.example` to `.env` and fill in a real `MONGO_URI` and `JWT_SECRET` first — every service (including the frontend's Vite dev proxy setup) reads these. Then, to run the microservices environment locally with a single command:
 ```bash
+cp .env.example .env   # then edit .env with real values
 docker compose up --build
 ```
-Access the local frontend client at `http://localhost:80` and backend APIs on ports `3001` - `3004`.
+Access the local frontend client at `http://localhost:80` (it reverse-proxies `/api/*` to each backend service internally — see `frontend/nginx.conf`) or hit each backend API directly on ports `3001`-`3004`.
+
+For frontend-only development without Docker, `cd frontend && npm run dev` starts the Vite dev server with the same `/api/*` proxying (see `frontend/vite.config.js`) against backend services you run separately with `npm run dev` in each `services/*` directory.
 
 ### 2. Connect to AWS EKS Cluster
 Initialize CLI context to map commands to your EKS cluster:
@@ -327,13 +339,24 @@ Initialize CLI context to map commands to your EKS cluster:
 aws eks update-kubeconfig --region ap-south-1 --name logbook-cluster
 ```
 
-### 3. Deploy Kubernetes Resources
+### 3. Create the Secret
+All four backend deployments read `MONGO_URI` and `JWT_SECRET` from a Kubernetes Secret named `logbook-secrets` (see `k8s/secret.example.yaml` for the template) — create it before deploying:
+```bash
+kubectl create namespace logbook
+kubectl create secret generic logbook-secrets \
+  --namespace logbook \
+  --from-literal=MONGO_URI='mongodb+srv://<user>:<password>@<cluster-host>/logbookDB?retryWrites=true&w=majority' \
+  --from-literal=JWT_SECRET="$(openssl rand -base64 48)"
+```
+
+### 4. Deploy Kubernetes Resources
 Apply application workloads and routing policies:
 ```bash
 kubectl apply -f k8s/auth/
 kubectl apply -f k8s/customer/
 kubectl apply -f k8s/inventory/
 kubectl apply -f k8s/transaction/
+kubectl apply -f k8s/frontend/
 kubectl apply -f k8s/ingress/
 ```
 Verify the public routing URL:

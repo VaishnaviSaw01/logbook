@@ -6,7 +6,8 @@ import {
   ArrowLeftRight,
   Settings,
   LogOut,
-  BookOpen
+  Package,
+  UserCog
 } from "lucide-react";
 import "./sidebar.css";
 function Sidebar({ setToken }) {
@@ -66,6 +67,18 @@ const user = JSON.parse(localStorage.getItem("user"));
     <ArrowLeftRight size={18} />
     <span>Transactions</span>
   </NavLink>
+
+  <NavLink to="/inventory" className="menu-item">
+    <Package size={18} />
+    <span>Inventory</span>
+  </NavLink>
+
+  {user?.role === "ADMIN" && (
+    <NavLink to="/staff" className="menu-item">
+      <UserCog size={18} />
+      <span>Staff</span>
+    </NavLink>
+  )}
 
   <NavLink to="/Settings" className="menu-item">
     <Settings size={18} />

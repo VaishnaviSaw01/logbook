@@ -12,42 +12,58 @@ spec:
   - http:
       paths:
 
-      - path: /auth
-        pathType: Prefix
+      # No rewrite-target here on purpose: each backend service mounts
+      # its routes under this exact same "/api/..." prefix (see each
+      # service's server.js), and the frontend also calls these same
+      # relative "/api/..." paths — so the path must pass through
+      # unchanged for both sides to agree on it.
 
+      - path: /api/auth
+        pathType: Prefix
         backend:
           service:
             name: auth-service
-
             port:
               number: 80
 
-      - path: /customer
+      - path: /api/staff
         pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 80
 
+      - path: /api/parties
+        pathType: Prefix
         backend:
           service:
             name: customer-service
-
             port:
               number: 80
 
-      - path: /inventory
+      - path: /api/inventory
         pathType: Prefix
-
         backend:
           service:
             name: inventory-service
-
             port:
               number: 80
 
-      - path: /transaction
+      - path: /api/transactions
         pathType: Prefix
-
         backend:
           service:
             name: transaction-service
+            port:
+              number: 80
 
+      # Everything else (the React app and its client-side routes) goes
+      # to the frontend. Must be listed last / least specific.
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
             port:
               number: 80
