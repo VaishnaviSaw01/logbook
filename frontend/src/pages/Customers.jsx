@@ -16,7 +16,7 @@ const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 const [showPaymentModal, setShowPaymentModal] = useState(false);
 const [inventoryItems, setInventoryItems] = useState([]);
 const [purchaseItems, setPurchaseItems] = useState([
-  { itemId: "", quantity: "", price: "" }
+  { name: "", quantity: "", price: "" }
 ]);
 async function fetchInventory() {
   const { data } = await axios.get(
@@ -298,7 +298,7 @@ const handleUpdateTransaction = async () => {
 const handleAddItem = () => {
   setPurchaseItems([
     ...purchaseItems,
-    { itemId: "", quantity: "", price: "" }
+    { name: "", quantity: "", price: "" }
   ]);
 };
 const handleItemChange = (index, field, value) => {
@@ -314,20 +314,24 @@ const handleSavePurchase = async () => {
     const token = localStorage.getItem("token");
 
     const validItems = purchaseItems.filter(
-      item => item.itemId && Number(item.quantity) > 0 && item.price !== ""
+      item => item.name.trim() && Number(item.quantity) > 0 && item.price !== ""
     );
 
+    // Nothing usable to save yet (e.g. all rows still blank) — just do
+    // nothing rather than block with a popup.
     if (validItems.length === 0) {
-      alert("Select at least one item with a quantity before saving.");
       return;
     }
 
     // One transaction per line item (the API links a single
-    // itemId/quantity per transaction) so each sale actually decrements
-    // that item's stock. Sequential so two rows for the same item don't
-    // race on the same stock read-modify-write.
+    // item/quantity per transaction) so each sale actually decrements
+    // that item's stock. The item must already exist for a customer
+    // sale — you can't sell stock that was never received — the API
+    // returns a clear error if the typed name doesn't match anything.
+    // Sequential so two rows for the same item don't race on the same
+    // stock read-modify-write.
     for (const item of validItems) {
-      const itemName = inventoryItems.find(i => i._id === item.itemId)?.name || "Item";
+      const itemNameTrimmed = item.name.trim();
 
       await axios.post(
         "/api/transactions",
@@ -336,8 +340,8 @@ const handleSavePurchase = async () => {
           amount: Number(item.quantity) * Number(item.price),
           type: "DEBIT", // customer took goods
           paymentMethod: "CASH",
-          note: `${itemName} (${item.quantity} x ${item.price})`,
-          itemId: item.itemId,
+          note: `${itemNameTrimmed} (${item.quantity} x ${item.price})`,
+          itemName: itemNameTrimmed,
           quantity: Number(item.quantity)
         },
         {
@@ -347,7 +351,7 @@ const handleSavePurchase = async () => {
     }
 
     setShowPurchaseModal(false);
-    setPurchaseItems([{ itemId: "", quantity: "", price: "" }]);
+    setPurchaseItems([{ name: "", quantity: "", price: "" }]);
 
     await refreshCustomerData(selectedCustomer._id);
     await fetchInventory();
@@ -769,19 +773,15 @@ const pendingBalance = totalPurchases - totalPayments;
 {purchaseItems.map((item, index) => (
   <div key={index} className="purchase-row">
 
-    <select
-      value={item.itemId}
+    <input
+      type="text"
+      placeholder="Item name"
+      list="customer-inventory-items"
+      value={item.name}
       onChange={(e) =>
-        handleItemChange(index, "itemId", e.target.value)
+        handleItemChange(index, "name", e.target.value)
       }
-    >
-      <option value="">Select Item</option>
-      {inventoryItems.map(inv => (
-        <option key={inv._id} value={inv._id}>
-          {inv.name} (Stock: {inv.stock})
-        </option>
-      ))}
-    </select>
+    />
 
     <input
       type="number"
@@ -808,15 +808,24 @@ const pendingBalance = totalPurchases - totalPayments;
   </div>
 ))}
 
+{/* Typing an existing item's name here is an autocomplete suggestion —
+    a sale requires the item to already exist (you can't sell stock
+    that was never received), the API returns a clear error otherwise. */}
+<datalist id="customer-inventory-items">
+  {inventoryItems.map(inv => (
+    <option key={inv._id} value={inv.name}>{`Stock: ${inv.stock}`}</option>
+  ))}
+</datalist>
+
 <button className="add-item-btn" onClick={handleAddItem}>
   + Add More Item
 </button>
 
 <h4>Total: ₹{purchaseTotal}</h4>
 
-      
+
       <div className="modal-actions">
-        <button 
+        <button
           className="cancel-btn"
           onClick={() => setShowPurchaseModal(false)}
         >

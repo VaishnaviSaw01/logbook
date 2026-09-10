@@ -16,7 +16,7 @@ const getOwnerId = (user) => {
 ================================ */
 exports.createTransaction = async (req, res) => {
   try {
-    const { partyId, amount, type, note, paymentMethod, itemId, quantity } = req.body;
+    const { partyId, amount, type, note, paymentMethod, itemId, itemName, quantity } = req.body;
 
     if (!partyId || !amount || !type) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -50,13 +50,43 @@ exports.createTransaction = async (req, res) => {
     // stock check ran *after* the transaction was already created and the
     // response already sent, so a rejected sale still landed in the
     // ledger with no way to tell the client it failed.
+    //
+    // The item can be given either as itemId (an existing item's _id) or
+    // itemName (free-typed text from the purchase/sale form) — the
+    // frontend sends itemName so a new supplier item can be typed
+    // straight into existence instead of requiring it to already exist
+    // in a dropdown.
     let item = null;
+    const trimmedItemName = typeof itemName === "string" ? itemName.trim() : "";
 
-    if (itemId && numericQuantity > 0) {
-      item = await InventoryItem.findOne({ _id: itemId, user: ownerId });
+    if ((itemId || trimmedItemName) && numericQuantity > 0) {
+      if (itemId) {
+        item = await InventoryItem.findOne({ _id: itemId, user: ownerId });
 
-      if (!item) {
-        return res.status(404).json({ message: "Inventory item not found" });
+        if (!item) {
+          return res.status(404).json({ message: "Inventory item not found" });
+        }
+      } else {
+        item = await InventoryItem.findOne({ name: trimmedItemName, user: ownerId });
+
+        if (!item) {
+          if (party.type === "SUPPLIER" && type === "CREDIT") {
+            // Receiving a shipment of a brand-new item — create it. The
+            // purchase form only collects a purchase price, not a
+            // selling price, so default sellingPrice to it; adjust it
+            // later from the Inventory page if needed.
+            item = await InventoryItem.create({
+              name: trimmedItemName,
+              sellingPrice: numericAmount / numericQuantity,
+              stock: 0,
+              user: ownerId
+            });
+          } else {
+            return res.status(404).json({
+              message: `No inventory item named "${trimmedItemName}" — add it via a supplier purchase first`
+            });
+          }
+        }
       }
 
       if (party.type === "CUSTOMER" && type === "DEBIT" && item.stock < numericQuantity) {
@@ -76,7 +106,7 @@ exports.createTransaction = async (req, res) => {
       type,
       note,
       paymentMethod,
-      item: itemId || null,
+      item: item ? item._id : null,
       quantity: numericQuantity
     });
 
