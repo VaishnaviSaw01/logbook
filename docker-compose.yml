@@ -1,4 +1,22 @@
 services:
+  # Optional self-hosted MongoDB for local dev, so you don't need Atlas
+  # credentials just to run the app on your machine. Not started by
+  # default — opt in with: docker compose --profile local-mongo up --build
+  # and point MONGO_URI (in .env) at mongodb://mongo:27017/logbookDB
+  mongo:
+    image: mongo:7
+    profiles: ["local-mongo"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - logbook-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   auth-service:
     build: ./services/auth-service
     ports:
@@ -7,6 +25,10 @@ services:
       PORT: 3001
       MONGO_URI: ${MONGO_URI}
       JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      mongo:
+        condition: service_healthy
+        required: false
     restart: unless-stopped
 
   customer-service:
@@ -17,6 +39,10 @@ services:
       PORT: 3002
       MONGO_URI: ${MONGO_URI}
       JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      mongo:
+        condition: service_healthy
+        required: false
     restart: unless-stopped
 
   inventory-service:
@@ -27,6 +53,10 @@ services:
       PORT: 3003
       MONGO_URI: ${MONGO_URI}
       JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      mongo:
+        condition: service_healthy
+        required: false
     restart: unless-stopped
 
   transaction-service:
@@ -37,6 +67,10 @@ services:
       PORT: 3004
       MONGO_URI: ${MONGO_URI}
       JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      mongo:
+        condition: service_healthy
+        required: false
     restart: unless-stopped
 
   frontend:
@@ -49,3 +83,6 @@ services:
       - inventory-service
       - transaction-service
     restart: unless-stopped
+
+volumes:
+  logbook-mongo-data:
