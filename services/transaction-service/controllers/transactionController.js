@@ -53,7 +53,7 @@ exports.createTransaction = async (req, res) => {
     let item = null;
 
     if (itemId && numericQuantity > 0) {
-      item = await InventoryItem.findOne({ _id: itemId, user: req.user._id });
+      item = await InventoryItem.findOne({ _id: itemId, user: ownerId });
 
       if (!item) {
         return res.status(404).json({ message: "Inventory item not found" });
@@ -68,7 +68,10 @@ exports.createTransaction = async (req, res) => {
 
     const transaction = await Transaction.create({
       party: partyId,
-      user: req.user._id,
+      // Owned by the business (ADMIN), not the acting user — a STAFF
+      // member's own _id here would make the transaction invisible to
+      // every subsequent read, which all filter by getOwnerId().
+      user: ownerId,
       amount: numericAmount,
       type,
       note,
@@ -98,7 +101,7 @@ exports.createTransaction = async (req, res) => {
           supplier: partyId,
           quantity: numericQuantity,
           purchasePrice: numericAmount / numericQuantity,
-          user: req.user._id
+          user: ownerId
         });
       }
 

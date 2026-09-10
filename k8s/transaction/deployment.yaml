@@ -22,6 +22,7 @@ spec:
       - name: transaction-service
 
         image: vaishnavisaw01/transaction-service:v2
+        imagePullPolicy: IfNotPresent
 
         ports:
         - containerPort: 3004

@@ -1,0 +1,19 @@
+# Base resource list for the whole logbook namespace. `kubectl apply -f
+# k8s/<service>/` (per the README) still works fine and ignores this file
+# — this only matters when something references k8s/ (or k8s/local/) as a
+# kustomize base with `kubectl apply -k`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - auth/deployment.yaml
+  - auth/service.yaml
+  - customer/deployment.yaml
+  - customer/service.yaml
+  - inventory/deployment.yaml
+  - inventory/service.yaml
+  - transaction/deployment.yaml
+  - transaction/service.yaml
+  - frontend/deployment.yaml
+  - frontend/service.yaml
+  - ingress/ingress.yaml

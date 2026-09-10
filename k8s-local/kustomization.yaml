@@ -1,0 +1,31 @@
+# Local-dev overlay for Docker Desktop's built-in Kubernetes.
+#
+# Only difference from the base (../k8s): every image is retagged to
+# :local. Docker Desktop's Kubernetes shares the same image store as
+# `docker build` — there is no registry to push to and nothing to pull —
+# so combined with imagePullPolicy: IfNotPresent (set on every container
+# in the base manifests), the kubelet uses the image you just built on
+# the same machine instead of reaching out to Docker Hub.
+#
+# Usage: scripts/deploy-local.ps1 builds the images and applies this
+# overlay for you. To do it by hand:
+#   kubectl create namespace logbook
+#   kubectl create secret generic logbook-secrets -n logbook --from-env-file=.env
+#   kubectl apply -k k8s-local
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../k8s
+
+images:
+  - name: vaishnavisaw01/auth-service
+    newTag: local
+  - name: vaishnavisaw01/customer-service
+    newTag: local
+  - name: vaishnavisaw01/inventory-service
+    newTag: local
+  - name: vaishnavisaw01/transaction-service
+    newTag: local
+  - name: vaishnavisaw01/frontend-service
+    newTag: local

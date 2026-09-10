@@ -4,9 +4,17 @@ const InventoryPurchase = require("../models/InventoryPurchase");
 // resolves correctly in this service's own mongoose connection.
 require("../models/Party");
 
+// Inventory belongs to the business (the ADMIN account), not to whichever
+// individual logged in — a STAFF member's ADMIN owns the shared catalog.
+// Matches customer-service/transaction-service's ownership model.
+const getOwnerId = (user) => {
+  return user.role === "ADMIN" ? user._id : user.createdBy;
+};
+
 exports.getInventoryItems = async (req, res) => {
   try {
-    const items = await InventoryItem.find({ user: req.user._id }).sort({ name: 1 });
+    const ownerId = getOwnerId(req.user);
+    const items = await InventoryItem.find({ user: ownerId }).sort({ name: 1 });
     res.json(items);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -15,7 +23,8 @@ exports.getInventoryItems = async (req, res) => {
 
 exports.getInventoryDashboard = async (req, res) => {
   try {
-    const items = await InventoryItem.find({ user: req.user._id });
+    const ownerId = getOwnerId(req.user);
+    const items = await InventoryItem.find({ user: ownerId });
 
     const lowStock = items.filter(i => i.stock < 5);
 
@@ -31,9 +40,11 @@ exports.getInventoryDashboard = async (req, res) => {
 
 exports.getItemDetails = async (req, res) => {
   try {
+    const ownerId = getOwnerId(req.user);
+
     const item = await InventoryItem.findOne({
       _id: req.params.id,
-      user: req.user._id
+      user: ownerId
     });
 
     if (!item) {
@@ -41,7 +52,7 @@ exports.getItemDetails = async (req, res) => {
     }
 
     const purchases = await InventoryPurchase
-      .find({ item: req.params.id, user: req.user._id })
+      .find({ item: req.params.id, user: ownerId })
       .populate("supplier", "name phone")
       .sort({ createdAt: -1 })
       .limit(5);
@@ -77,9 +88,11 @@ exports.updateSellingPrice = async (req, res) => {
       return res.status(400).json({ message: "A valid sellingPrice is required" });
     }
 
+    const ownerId = getOwnerId(req.user);
+
     const item = await InventoryItem.findOne({
       _id: req.params.id,
-      user: req.user._id
+      user: ownerId
     });
 
     if (!item) {
@@ -109,9 +122,11 @@ exports.adjustStock = async (req, res) => {
       return res.status(400).json({ message: "purchasePrice must be a number" });
     }
 
+    const ownerId = getOwnerId(req.user);
+
     let item = await InventoryItem.findOne({
       name,
-      user: req.user._id
+      user: ownerId
     });
 
     if (!item) {
@@ -123,7 +138,7 @@ exports.adjustStock = async (req, res) => {
         name,
         sellingPrice: Number(sellingPrice),
         stock: numericQuantity,
-        user: req.user._id
+        user: ownerId
       });
     } else {
       item.stock += numericQuantity;
@@ -138,7 +153,7 @@ exports.adjustStock = async (req, res) => {
       supplier: null,
       quantity: numericQuantity,
       purchasePrice: numericPurchasePrice || 0,
-      user: req.user._id
+      user: ownerId
     });
 
     res.json(item);

@@ -333,13 +333,29 @@ Access the local frontend client at `http://localhost:80` (it reverse-proxies `/
 
 For frontend-only development without Docker, `cd frontend && npm run dev` starts the Vite dev server with the same `/api/*` proxying (see `frontend/vite.config.js`) against backend services you run separately with `npm run dev` in each `services/*` directory.
 
-### 2. Connect to AWS EKS Cluster
+### 2. Run on a Free Local Kubernetes Cluster (Docker Desktop)
+No cloud account needed — this uses Docker Desktop's built-in single-node Kubernetes, which you already have if Docker Desktop is installed (Settings → Kubernetes → **Enable Kubernetes**, then Apply & Restart; wait for the green "Running" indicator bottom-left).
+
+Everything below is automated by [scripts/deploy-local.ps1](scripts/deploy-local.ps1):
+```powershell
+Copy-Item .env.example .env   # then edit .env with real MONGO_URI / JWT_SECRET
+.\scripts\deploy-local.ps1
+```
+It builds all 5 images tagged `:local` directly into Docker Desktop's own image store (no registry, no push — see `k8s-local/kustomization.yaml`), creates the `logbook-secrets` Secret from `.env`, installs `ingress-nginx` via Helm if it isn't already there, applies the app, waits for every pod to be ready, and does a quick timed request against each service through the ingress so you can see both "is it up" and "how fast" in one go. Docker Desktop auto-publishes the ingress controller's `LoadBalancer` Service on `localhost` — no `minikube tunnel` or NodePort juggling needed. Open **http://localhost** when it finishes.
+
+To do it by hand instead of the script: `docker build` each of the 5 images with the `:local` tag (see the script for exact names/paths), then `kubectl apply -k k8s-local` after creating the namespace/secret as shown in step 4 below (swap `-f k8s/<service>/` for `-k k8s-local` and you're using the same local-image overlay).
+
+Tear down with `kubectl delete -k k8s-local` (leaves `ingress-nginx` and the secret in place for next time).
+
+**On latency**: everything from your browser through the ingress to each service stays on your machine — that part is already about as fast as HTTP gets. `MONGO_URI` still points at MongoDB Atlas (a cloud database) by default, so every database read/write pays a real network round trip to Atlas regardless of the k8s setup; that's the one latency cost this local setup doesn't remove. Swapping in a self-hosted MongoDB (e.g. a `mongo` container in the same cluster) would eliminate it if you want to go further.
+
+### 3. Connect to AWS EKS Cluster
 Initialize CLI context to map commands to your EKS cluster:
 ```bash
 aws eks update-kubeconfig --region ap-south-1 --name logbook-cluster
 ```
 
-### 3. Create the Secret
+### 4. Create the Secret
 All four backend deployments read `MONGO_URI` and `JWT_SECRET` from a Kubernetes Secret named `logbook-secrets` (see `k8s/secret.example.yaml` for the template) — create it before deploying:
 ```bash
 kubectl create namespace logbook
@@ -349,7 +365,7 @@ kubectl create secret generic logbook-secrets \
   --from-literal=JWT_SECRET="$(openssl rand -base64 48)"
 ```
 
-### 4. Deploy Kubernetes Resources
+### 5. Deploy Kubernetes Resources
 Apply application workloads and routing policies:
 ```bash
 kubectl apply -f k8s/auth/

@@ -22,6 +22,7 @@ spec:
       - name: auth-service
 
         image: vaishnavisaw01/auth-service:v2
+        imagePullPolicy: IfNotPresent
 
         ports:
         - containerPort: 3001
