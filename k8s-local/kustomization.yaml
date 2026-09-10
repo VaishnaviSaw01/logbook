@@ -27,5 +27,7 @@ images:
     newTag: local
   - name: vaishnavisaw01/transaction-service
     newTag: local
+  - name: vaishnavisaw01/insights-service
+    newTag: local
   - name: vaishnavisaw01/frontend-service
     newTag: local

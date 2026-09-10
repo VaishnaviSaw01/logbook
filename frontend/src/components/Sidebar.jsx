@@ -7,7 +7,8 @@ import {
   Settings,
   LogOut,
   Package,
-  UserCog
+  UserCog,
+  Sparkles
 } from "lucide-react";
 import "./sidebar.css";
 function Sidebar({ setToken }) {
@@ -71,6 +72,11 @@ const user = JSON.parse(localStorage.getItem("user"));
   <NavLink to="/inventory" className="menu-item">
     <Package size={18} />
     <span>Inventory</span>
+  </NavLink>
+
+  <NavLink to="/insights" className="menu-item">
+    <Sparkles size={18} />
+    <span>AI Insights</span>
   </NavLink>
 
   {user?.role === "ADMIN" && (

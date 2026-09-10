@@ -55,6 +55,7 @@ $services = @(
   @{ Name = "customer-service";    Path = "services/customer-service" },
   @{ Name = "inventory-service";   Path = "services/inventory-service" },
   @{ Name = "transaction-service"; Path = "services/transaction-service" },
+  @{ Name = "insights-service";    Path = "services/insights-service" },
   @{ Name = "frontend-service";    Path = "frontend" }
 )
 foreach ($svc in $services) {
@@ -95,7 +96,7 @@ kubectl apply -k k8s-local
 if ($LASTEXITCODE -ne 0) { throw "kubectl apply -k k8s-local failed" }
 
 Step "Waiting for rollouts"
-$deployments = @("auth-service", "customer-service", "inventory-service", "transaction-service", "frontend-service")
+$deployments = @("auth-service", "customer-service", "inventory-service", "transaction-service", "insights-service", "frontend-service")
 foreach ($d in $deployments) {
   kubectl rollout status "deployment/$d" -n logbook --timeout=120s
   if ($LASTEXITCODE -ne 0) {
@@ -119,7 +120,7 @@ if (-not $ready) {
 
 # ---------------------------------------------------------------------
 Step "Smoke-testing the app through the ingress (http://localhost)"
-$endpoints = @("/", "/api/auth", "/api/parties", "/api/inventory", "/api/transactions")
+$endpoints = @("/", "/api/auth", "/api/parties", "/api/inventory", "/api/transactions", "/api/insights")
 foreach ($ep in $endpoints) {
   try {
     $sw = [System.Diagnostics.Stopwatch]::StartNew()

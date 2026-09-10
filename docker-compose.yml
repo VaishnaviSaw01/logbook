@@ -73,6 +73,23 @@ services:
         required: false
     restart: unless-stopped
 
+  insights-service:
+    build: ./services/insights-service
+    ports:
+      - "3005:3005"
+    environment:
+      PORT: 3005
+      MONGO_URI: ${MONGO_URI}
+      JWT_SECRET: ${JWT_SECRET}
+      # Optional — AI Insights/reminder drafting fall back to rule-based
+      # text when this isn't set. Get a key at console.anthropic.com.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    depends_on:
+      mongo:
+        condition: service_healthy
+        required: false
+    restart: unless-stopped
+
   frontend:
     build: ./frontend
     ports:
@@ -82,6 +99,7 @@ services:
       - customer-service
       - inventory-service
       - transaction-service
+      - insights-service
     restart: unless-stopped
 
 volumes:

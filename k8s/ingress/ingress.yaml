@@ -58,6 +58,14 @@ spec:
             port:
               number: 80
 
+      - path: /api/insights
+        pathType: Prefix
+        backend:
+          service:
+            name: insights-service
+            port:
+              number: 80
+
       # Everything else (the React app and its client-side routes) goes
       # to the frontend. Must be listed last / least specific.
       - path: /

@@ -11,6 +11,7 @@ import Settings from "./pages/Settings";
 import Staff from "./pages/Staff";
 import Layout from "./components/Layout";
 import Inventory from "./pages/Inventory";
+import Insights from "./pages/Insights";
 
 function App() {
 
@@ -127,6 +128,19 @@ function App() {
             token ? (
               <Layout setToken={setToken}>
                 <Inventory />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+
+        <Route
+          path="/insights"
+          element={
+            token ? (
+              <Layout setToken={setToken}>
+                <Insights />
               </Layout>
             ) : (
               <Navigate to="/login" />

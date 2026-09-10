@@ -1,4 +1,5 @@
 import Sidebar from "./Sidebar";
+import ReminderPopup from "./ReminderPopup";
 import "./layout.css";
 
 function Layout({ children, setToken }) {
@@ -8,6 +9,7 @@ function Layout({ children, setToken }) {
       <div className="layout-content">
         {children}
       </div>
+      <ReminderPopup />
     </div>
   );
 }

@@ -62,25 +62,48 @@ The codebase is organized modularly to decouple frontend interfaces, backend mic
 │   ├── package.json            # Client Dependencies & Build Scripts
 │   └── vite.config.js          # Vite Configuration Engine
 ├── services/                   # Decoupled Backend Microservices
-│   ├── auth-service/           # User Signups, Logins, and JWT Generation (Port 3001)
-│   ├── customer-service/       # Customer Records and Balance Tracking (Port 3002)
+│   ├── auth-service/           # User Signups, Logins, Staff, and JWT Generation (Port 3001)
+│   ├── customer-service/       # Customer/Supplier Records and Balance Tracking (Port 3002)
 │   ├── inventory-service/      # Product Catalog and Inventory Stocks (Port 3003)
-│   └── transaction-service/    # Ledgers, Billing, Sales, and Purchase Actions (Port 3004)
-├── k8s/                        # Declarative Kubernetes Manifests
+│   ├── transaction-service/    # Ledgers, Billing, Sales, and Purchase Actions (Port 3004)
+│   └── insights-service/       # AI Insights: analytics, priority customers, reminders (Port 3005)
+├── k8s/                        # Declarative Kubernetes Manifests (base — also the EKS/cloud path)
 │   ├── auth/                   # Deployment and Service Yaml for Auth Pods
-│   ├── customer/               # Deployment and Service Yaml for Customer Pods
-│   ├── inventory/              # Deployment and Service Yaml for Inventory Pods
-│   ├── transaction/            # Deployment and Service Yaml for Transaction Pods
-│   └── ingress/                # Nginx Ingress Path-based Routing rules
+│   ├── customer/                # Deployment and Service Yaml for Customer Pods
+│   ├── inventory/               # Deployment and Service Yaml for Inventory Pods
+│   ├── transaction/             # Deployment and Service Yaml for Transaction Pods
+│   ├── insights/                 # Deployment and Service Yaml for Insights Pods
+│   ├── frontend/                 # Deployment and Service Yaml for the React app
+│   ├── ingress/                  # Nginx Ingress path-based routing rules
+│   ├── kustomization.yaml        # Lists the resources above as one kustomize base
+│   └── secret.example.yaml       # Template for the logbook-secrets Secret (copy to secret.yaml)
+├── k8s-local/                   # Kustomize overlay: same manifests, images retagged :local
+├── scripts/deploy-local.ps1      # One-command build + deploy to Docker Desktop's Kubernetes
 ├── logbook-chart/              # Reusable Helm Chart Package for LogBook
 │   ├── templates/              # Deployment & Service Manifest Templates
 │   ├── Chart.yaml              # Helm Chart Metadata Definition
 │   ├── values.yaml             # Helm Configurable Values for Environments
 │   └── .helmignore             # Ignored Chart Development Files
+├── docker-compose.yml           # Local run without Kubernetes (docker compose up --build)
+├── .env.example                  # Template for local secrets (.env, gitignored)
 ├── grafana-lb.yaml             # Custom LoadBalancer configuration exposing Grafana Dashboard
 ├── prometheus-values.yaml      # Custom Prometheus settings for cluster metric collection
 └── .gitignore                  # Git Version Control Exclusions
 ```
+
+---
+
+## 🤖 AI Insights
+
+The **AI Insights** tab (`insights-service`, port 3005) reads across the other services' data — customers, suppliers, inventory, and transactions — to surface:
+
+* **Business summary** — a guessed business type (e.g. "Grocery / Kirana store") inferred from your item catalog, the standout insight in your data, and 2-3 concrete suggestions.
+* **Top-selling products**, revenue/collection/payable totals, and low-stock flags.
+* **Customer segmentation** by transaction frequency — Frequent / Occasional / One-time / Dormant.
+* **Priority customers** — who owes the most, weighted by how stale their last activity is — and **suppliers you owe**, each with a one-click "Remind"/"Schedule Payback" action.
+* **Reminders** — tied to a customer or supplier, with a type (call, order follow-up, payment request, supplier payback, note), a due date, and an optional drafted message. A friendly popup shows on login (once per browser session) for anything due today, tomorrow, or overdue.
+
+**AI is optional, not required.** Set `ANTHROPIC_API_KEY` (see `.env.example` / `k8s/secret.example.yaml`) to get real AI-generated business summaries and reminder message drafts from Claude. Without a key, every feature above still works — the business summary and reminder drafts fall back to rule-based, templated text instead (the UI labels which one you're seeing). Get a key at [console.anthropic.com](https://console.anthropic.com).
 
 ---
 
@@ -89,7 +112,7 @@ The codebase is organized modularly to decouple frontend interfaces, backend mic
 | Layer | Technology | Version | Purpose & Implementation Scope |
 |---|---|---|---|
 | **Frontend UI** | React.js / Vite | `v18+` | Dynamic UI dashboard, local storage auth state management |
-| **Backend API** | Node.js / Express.js | `v20-alpine` | Autonomous Express services serving API endpoints over ports `3001`-`3004` |
+| **Backend API** | Node.js / Express.js | `v20-alpine` | Autonomous Express services serving API endpoints over ports `3001`-`3005` |
 | **Database** | MongoDB Atlas | `v6.x Cloud` | Scalable NoSQL cloud document store connected via TLS SRV strings |
 | **Local Tools** | Chocolatey | `v2.5.1` | Local Windows package manager automating tooling installation |
 | **Container Engine**| Docker / Desktop | `Latest` | Local image builds and container virtualization environment |
@@ -135,7 +158,7 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 COPY . .
 USER node
-EXPOSE 3000  # Exposed service-specific ports (3001-3004)
+EXPOSE 3000  # Exposed service-specific ports (3001-3005)
 CMD ["node", "server.js"]
 ```
 
@@ -196,6 +219,13 @@ spec:
             backend:
               service:
                 name: transaction-service
+                port:
+                  number: 80
+          - path: /api/insights
+            pathType: Prefix
+            backend:
+              service:
+                name: insights-service
                 port:
                   number: 80
           - path: /
@@ -329,7 +359,7 @@ Copy `.env.example` to `.env` and fill in a real `MONGO_URI` and `JWT_SECRET` fi
 cp .env.example .env   # then edit .env with real values
 docker compose up --build
 ```
-Access the local frontend client at `http://localhost:80` (it reverse-proxies `/api/*` to each backend service internally — see `frontend/nginx.conf`) or hit each backend API directly on ports `3001`-`3004`.
+Access the local frontend client at `http://localhost:80` (it reverse-proxies `/api/*` to each backend service internally — see `frontend/nginx.conf`) or hit each backend API directly on ports `3001`-`3005`.
 
 For frontend-only development without Docker, `cd frontend && npm run dev` starts the Vite dev server with the same `/api/*` proxying (see `frontend/vite.config.js`) against backend services you run separately with `npm run dev` in each `services/*` directory.
 
@@ -372,6 +402,7 @@ kubectl apply -f k8s/auth/
 kubectl apply -f k8s/customer/
 kubectl apply -f k8s/inventory/
 kubectl apply -f k8s/transaction/
+kubectl apply -f k8s/insights/
 kubectl apply -f k8s/frontend/
 kubectl apply -f k8s/ingress/
 ```

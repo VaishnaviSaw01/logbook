@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: insights-service
+  namespace: logbook
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: insights-service
+
+  template:
+    metadata:
+      labels:
+        app: insights-service
+
+    spec:
+      containers:
+      - name: insights-service
+
+        image: vaishnavisaw01/insights-service:v1
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - containerPort: 3005
+
+        env:
+        - name: PORT
+          value: "3005"
+
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: logbook-secrets
+              key: MONGO_URI
+
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: logbook-secrets
+              key: JWT_SECRET
+
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: logbook-secrets
+              key: ANTHROPIC_API_KEY
+              optional: true
+
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3005
+          initialDelaySeconds: 10
+          periodSeconds: 15
+
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 3005
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

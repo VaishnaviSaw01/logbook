@@ -14,6 +14,8 @@ resources:
   - inventory/service.yaml
   - transaction/deployment.yaml
   - transaction/service.yaml
+  - insights/deployment.yaml
+  - insights/service.yaml
   - frontend/deployment.yaml
   - frontend/service.yaml
   - ingress/ingress.yaml

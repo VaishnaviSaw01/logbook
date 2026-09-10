@@ -17,6 +17,7 @@ export default defineConfig({
       '/api/parties': 'http://localhost:3002',
       '/api/inventory': 'http://localhost:3003',
       '/api/transactions': 'http://localhost:3004',
+      '/api/insights': 'http://localhost:3005',
     },
   },
 })
